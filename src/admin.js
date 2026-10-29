@@ -1,4 +1,19 @@
 import './style.css'
+import { auth, db } from './firebase.js'
+import {
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth'
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  orderBy
+} from 'firebase/firestore'
 
 const app = document.querySelector('#app')
 
@@ -16,130 +31,177 @@ app.innerHTML = `
       <section class="admin-welcome">
         <span>ADMINISTRATION</span>
         <h2>वेबसाइट प्रबंधन</h2>
-        <p>गाँव के समाचार और जानकारी यहाँ प्रबंधित करें।</p>
+        <p>गाँव के समाचार यहाँ से प्रकाशित करें।</p>
       </section>
 
-      <section class="admin-stats">
-        <div class="admin-stat">
-          <span>📰</span>
-          <h3 id="news-count">0</h3>
-          <p>कुल समाचार</p>
-        </div>
-        <div class="admin-stat">
-          <span>📢</span>
-          <h3 id="notice-count">0</h3>
-          <p>घोषणाएँ</p>
-        </div>
-        <div class="admin-stat">
-          <span>📝</span>
-          <h3 id="complaint-count">0</h3>
-          <p>शिकायतें</p>
-        </div>
-      </section>
+      <section class="admin-form-card" id="login-card">
+        <h2>🔐 Admin Login</h2>
+        <form id="login-form">
+          <label for="email">ईमेल</label>
+          <input id="email" type="email" required
+            autocomplete="username"
+            placeholder="अपना Admin ईमेल लिखें">
 
-      <section class="admin-form-card">
-        <h2>➕ नया समाचार जोड़ें</h2>
+          <label for="password">पासवर्ड</label>
+          <input id="password" type="password" required
+            autocomplete="current-password"
+            placeholder="अपना पासवर्ड लिखें">
 
-        <form id="news-form">
-          <label for="news-title">समाचार का शीर्षक</label>
-          <input
-            id="news-title"
-            type="text"
-            placeholder="समाचार का शीर्षक लिखें"
-            required
-          >
-
-          <label for="news-category">समाचार की श्रेणी</label>
-          <select id="news-category" required>
-            <option value="गाँव के समाचार">गाँव के समाचार</option>
-            <option value="ग्राम पंचायत">ग्राम पंचायत</option>
-            <option value="किसान समाचार">किसान समाचार</option>
-            <option value="सरकारी योजना">सरकारी योजना</option>
-            <option value="कार्यक्रम">कार्यक्रम</option>
-          </select>
-
-          <label for="news-description">समाचार का विवरण</label>
-          <textarea
-            id="news-description"
-            rows="5"
-            placeholder="समाचार का पूरा विवरण लिखें"
-            required
-          ></textarea>
-
-          <button type="submit" class="admin-button">
-            समाचार जोड़ें
-          </button>
-
-          <p id="form-message" aria-live="polite"></p>
+          <button type="submit" class="admin-button">लॉगिन करें</button>
+          <p id="login-message" aria-live="polite"></p>
         </form>
       </section>
 
-      <section class="admin-form-card">
-        <h2>📋 समाचारों की सूची</h2>
-        <div id="news-list"></div>
-      </section>
+      <div id="dashboard" hidden>
+        <section class="admin-form-card">
+          <p id="logged-in-user"></p>
+          <button id="logout-button" class="delete-button">
+            Logout
+          </button>
+        </section>
+
+        <section class="admin-stats">
+          <div class="admin-stat">
+            <span>📰</span>
+            <h3 id="news-count">0</h3>
+            <p>कुल समाचार</p>
+          </div>
+        </section>
+
+        <section class="admin-form-card">
+          <h2>➕ नया समाचार जोड़ें</h2>
+          <form id="news-form">
+            <label for="news-title">समाचार का शीर्षक</label>
+            <input id="news-title" type="text" required
+              placeholder="समाचार का शीर्षक लिखें">
+
+            <label for="news-category">समाचार की श्रेणी</label>
+            <select id="news-category" required>
+              <option value="गाँव के समाचार">गाँव के समाचार</option>
+              <option value="ग्राम पंचायत">ग्राम पंचायत</option>
+              <option value="किसान समाचार">किसान समाचार</option>
+              <option value="सरकारी योजना">सरकारी योजना</option>
+              <option value="कार्यक्रम">कार्यक्रम</option>
+            </select>
+
+            <label for="news-description">समाचार का विवरण</label>
+            <textarea id="news-description" rows="5" required
+              placeholder="समाचार का पूरा विवरण लिखें"></textarea>
+
+            <button type="submit" class="admin-button">
+              समाचार प्रकाशित करें
+            </button>
+            <p id="form-message" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="admin-form-card">
+          <h2>📋 प्रकाशित समाचार</h2>
+          <div id="news-list">समाचार लोड हो रहे हैं...</div>
+        </section>
+      </div>
     </main>
   </div>
 `
 
-const STORAGE_KEY = 'gram-amirpur-news'
+const loginCard = document.querySelector('#login-card')
+const dashboard = document.querySelector('#dashboard')
+const loginMessage = document.querySelector('#login-message')
+const formMessage = document.querySelector('#form-message')
+const newsList = document.querySelector('#news-list')
+const newsCollection = collection(db, 'news')
 
-function getNews() {
+let currentUser = null
+
+function showMessage(element, message) {
+  element.textContent = message
+}
+
+async function renderNews() {
+  newsList.textContent = 'समाचार लोड हो रहे हैं...'
+
   try {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    return Array.isArray(data) ? data : []
-  } catch {
-    return []
+    const newsQuery = query(newsCollection, orderBy('date', 'desc'))
+    const snapshot = await getDocs(newsQuery)
+
+    newsList.replaceChildren()
+    document.querySelector('#news-count').textContent = snapshot.size
+
+    if (snapshot.empty) {
+      newsList.textContent = 'अभी कोई समाचार प्रकाशित नहीं हुआ है।'
+      return
+    }
+
+    snapshot.forEach((newsDoc) => {
+      const item = newsDoc.data()
+      const card = document.createElement('article')
+      card.className = 'admin-news-item'
+
+      const title = document.createElement('h3')
+      title.textContent = item.title || 'गाँव का समाचार'
+
+      const category = document.createElement('p')
+      category.textContent = 'श्रेणी: ' + (item.category || 'सामान्य')
+
+      const description = document.createElement('p')
+      description.textContent = item.description || ''
+
+      const removeButton = document.createElement('button')
+      removeButton.className = 'delete-button'
+      removeButton.textContent = 'समाचार हटाएँ'
+
+      removeButton.addEventListener('click', async () => {
+        if (!currentUser) return
+
+        if (!confirm('क्या आप यह समाचार हटाना चाहते हैं?')) return
+
+        try {
+          await deleteDoc(doc(db, 'news', newsDoc.id))
+          showMessage(formMessage, 'समाचार हटा दिया गया है।')
+          await renderNews()
+        } catch (error) {
+          console.error(error)
+          showMessage(formMessage, 'समाचार नहीं हट पाया। कृपया फिर प्रयास करें।')
+        }
+      })
+
+      card.append(title, category, description, removeButton)
+      newsList.append(card)
+    })
+  } catch (error) {
+    console.error(error)
+    newsList.textContent =
+      'समाचार लोड नहीं हुए। Firebase सेटिंग और इंटरनेट कनेक्शन जाँचें।'
   }
 }
 
-function renderNews() {
-  const news = getNews()
-  const list = document.querySelector('#news-list')
+document.querySelector('#login-form').addEventListener('submit', async (event) => {
+  event.preventDefault()
+  showMessage(loginMessage, 'लॉगिन हो रहा है...')
 
-  document.querySelector('#news-count').textContent = news.length
-  list.replaceChildren()
+  const email = document.querySelector('#email').value.trim()
+  const password = document.querySelector('#password').value
 
-  if (news.length === 0) {
-    const emptyMessage = document.createElement('p')
-    emptyMessage.textContent = 'अभी कोई समाचार नहीं जोड़ा गया है।'
-    list.append(emptyMessage)
+  try {
+    await signInWithEmailAndPassword(auth, email, password)
+    showMessage(loginMessage, '')
+  } catch (error) {
+    console.error(error)
+    showMessage(loginMessage, 'लॉगिन नहीं हुआ। ईमेल और पासवर्ड जाँचें।')
+  }
+})
+
+document.querySelector('#logout-button').addEventListener('click', async () => {
+  await signOut(auth)
+})
+
+document.querySelector('#news-form').addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  if (!currentUser) {
+    showMessage(formMessage, 'पहले Admin लॉगिन करें।')
     return
   }
-
-  news.forEach((item) => {
-    const card = document.createElement('article')
-    card.className = 'admin-news-item'
-
-    const title = document.createElement('h3')
-    title.textContent = item.title
-
-    const category = document.createElement('p')
-    category.textContent = `श्रेणी: ${item.category}`
-
-    const description = document.createElement('p')
-    description.textContent = item.description
-
-    const removeButton = document.createElement('button')
-    removeButton.className = 'delete-button'
-    removeButton.textContent = 'समाचार हटाएँ'
-
-    removeButton.addEventListener('click', () => {
-      const confirmed = confirm('क्या आप यह समाचार हटाना चाहते हैं?')
-      if (!confirmed) return
-
-      const updatedNews = getNews().filter((newsItem) => newsItem.id !== item.id)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNews))
-      renderNews()
-    })
-
-    card.append(title, category, description, removeButton)
-    list.append(card)
-  })
-}
-
-document.querySelector('#news-form').addEventListener('submit', (event) => {
-  event.preventDefault()
 
   const title = document.querySelector('#news-title').value.trim()
   const category = document.querySelector('#news-category').value
@@ -147,23 +209,41 @@ document.querySelector('#news-form').addEventListener('submit', (event) => {
 
   if (!title || !description) return
 
-  const news = getNews()
+  showMessage(formMessage, 'समाचार प्रकाशित हो रहा है...')
 
-  news.unshift({
-    id: crypto.randomUUID(),
-    title,
-    category,
-    description,
-    date: new Date().toISOString()
-  })
+  try {
+    await addDoc(newsCollection, {
+      title,
+      category,
+      description,
+      date: Date.now(),
+      author: currentUser.email
+    })
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(news))
-
-  event.target.reset()
-  document.querySelector('#form-message').textContent =
-    'समाचार इस ब्राउज़र में सेव हो गया है।'
-
-  renderNews()
+    event.target.reset()
+    showMessage(formMessage, 'समाचार ऑनलाइन प्रकाशित हो गया है!')
+    await renderNews()
+  } catch (error) {
+    console.error(error)
+    showMessage(
+      formMessage,
+      'समाचार प्रकाशित नहीं हुआ। Firebase Rules और लॉगिन जाँचें।'
+    )
+  }
 })
 
-renderNews()
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user
+
+  loginCard.hidden = Boolean(user)
+  dashboard.hidden = !user
+
+  if (user) {
+    document.querySelector('#logged-in-user').textContent =
+      'लॉगिन: ' + user.email
+    await renderNews()
+  } else {
+    newsList.replaceChildren()
+    document.querySelector('#news-count').textContent = '0'
+  }
+})
