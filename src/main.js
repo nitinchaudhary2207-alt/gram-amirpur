@@ -71,18 +71,21 @@ if (window.location.pathname === '/admin') {
             <p>आवास योजना की पात्रता और आवेदन संबंधी जानकारी प्राप्त करें।</p>
             <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
+
           <article class="card">
             <div class="icon">🌾</div>
             <h3>पीएम किसान सम्मान निधि</h3>
             <p>किसान सम्मान निधि की किस्त और लाभार्थी संबंधी जानकारी।</p>
             <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
+
           <article class="card">
             <div class="icon">💳</div>
             <h3>ई-श्रम कार्ड</h3>
             <p>असंगठित क्षेत्र के श्रमिकों के लिए आधिकारिक जानकारी।</p>
             <a href="https://eshram.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
+
           <article class="card">
             <div class="icon">📋</div>
             <h3>अन्य सरकारी योजनाएँ</h3>
@@ -104,17 +107,20 @@ if (window.location.pathname === '/admin') {
             <h3>फसल और बीज</h3>
             <p>बुवाई, बीज चयन और फसल की देखभाल से जुड़ी जानकारी।</p>
           </article>
+
           <article class="card">
             <div class="icon">🧪</div>
             <h3>खाद और उर्वरक</h3>
             <p>खाद की उपलब्धता और उर्वरक के सही इस्तेमाल की जानकारी।</p>
           </article>
+
           <article class="card">
             <div class="icon">💰</div>
             <h3>किसान सहायता</h3>
             <p>किसान योजनाओं और कृषि विभाग की आधिकारिक सेवाओं के लिंक।</p>
             <a href="https://agriculture.up.gov.in/" target="_blank" rel="noopener noreferrer">कृषि विभाग →</a>
           </article>
+
           <article class="card">
             <div class="icon">🌦️</div>
             <h3>मौसम की जानकारी</h3>
@@ -151,16 +157,19 @@ if (window.location.pathname === '/admin') {
             <h3>पंचायत परिचय</h3>
             <p>ग्राम पंचायत से जुड़ी आधिकारिक जानकारी यहाँ उपलब्ध कराई जाएगी।</p>
           </article>
+
           <article class="card">
             <div class="icon">🛠️</div>
             <h3>विकास कार्य</h3>
             <p>गाँव में होने वाले विकास कार्यों की जानकारी यहाँ साझा की जाएगी।</p>
           </article>
+
           <article class="card">
             <div class="icon">👥</div>
             <h3>जनसुविधाएँ</h3>
             <p>गाँव की सार्वजनिक सुविधाओं और जरूरी सेवाओं की जानकारी।</p>
           </article>
+
           <article class="card">
             <div class="icon">📣</div>
             <h3>जनसमस्याएँ</h3>
@@ -169,13 +178,38 @@ if (window.location.pathname === '/admin') {
         </div>
       </section>
 
+      <!-- CONTACT SECTION -->
       <section class="section contact" id="contact">
         <div class="section-heading">
           <span>CONTACT</span>
           <h2>📍 संपर्क और पता</h2>
           <p>ग्राम अमीरपुर, ब्लॉक बलदेव, जिला मथुरा, उत्तर प्रदेश।</p>
         </div>
-        <p class="small">यह वेबसाइट गाँव की जानकारी साझा करने के उद्देश्य से बनाई गई है।</p>
+
+        <div class="contact-details">
+          <div class="icon">📞</div>
+          <h3>हमसे संपर्क करें</h3>
+          <p>संपर्क नंबर: <strong>9548772433</strong></p>
+
+          <div class="contact-actions">
+            <a class="button" href="tel:9548772433">
+              📞 अभी कॉल करें
+            </a>
+
+            <a
+              class="button"
+              href="https://wa.me/919548772433"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🟢 WhatsApp पर संपर्क करें
+            </a>
+          </div>
+        </div>
+
+        <p class="small">
+          यह वेबसाइट गाँव की जानकारी साझा करने के उद्देश्य से बनाई गई है।
+        </p>
       </section>
     </main>
 
