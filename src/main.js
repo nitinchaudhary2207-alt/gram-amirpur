@@ -7,7 +7,7 @@ import {
   orderBy
 } from 'firebase/firestore'
 
-if (window.location.pathname === '/admin') {
+if (window.location.pathname.replace(/\/$/, '') === '/admin') {
   import('./admin.js')
 } else {
   document.querySelector('#app').innerHTML = `
@@ -29,6 +29,7 @@ if (window.location.pathname === '/admin') {
       <a href="#farmers">किसान कॉर्नर</a>
       <a href="#notices">सरकारी सूचनाएँ</a>
       <a href="#panchayat">ग्राम पंचायत</a>
+      <a href="#directory">Call Directory</a>
       <a href="#contact">संपर्क</a>
       <a href="/admin">Admin Login</a>
     </nav>
@@ -71,21 +72,18 @@ if (window.location.pathname === '/admin') {
             <p>आवास योजना की पात्रता और आवेदन संबंधी जानकारी प्राप्त करें।</p>
             <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
-
           <article class="card">
             <div class="icon">🌾</div>
             <h3>पीएम किसान सम्मान निधि</h3>
             <p>किसान सम्मान निधि की किस्त और लाभार्थी संबंधी जानकारी।</p>
             <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
-
           <article class="card">
             <div class="icon">💳</div>
             <h3>ई-श्रम कार्ड</h3>
             <p>असंगठित क्षेत्र के श्रमिकों के लिए आधिकारिक जानकारी।</p>
             <a href="https://eshram.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
           </article>
-
           <article class="card">
             <div class="icon">📋</div>
             <h3>अन्य सरकारी योजनाएँ</h3>
@@ -107,20 +105,17 @@ if (window.location.pathname === '/admin') {
             <h3>फसल और बीज</h3>
             <p>बुवाई, बीज चयन और फसल की देखभाल से जुड़ी जानकारी।</p>
           </article>
-
           <article class="card">
             <div class="icon">🧪</div>
             <h3>खाद और उर्वरक</h3>
             <p>खाद की उपलब्धता और उर्वरक के सही इस्तेमाल की जानकारी।</p>
           </article>
-
           <article class="card">
             <div class="icon">💰</div>
             <h3>किसान सहायता</h3>
             <p>किसान योजनाओं और कृषि विभाग की आधिकारिक सेवाओं के लिंक।</p>
             <a href="https://agriculture.up.gov.in/" target="_blank" rel="noopener noreferrer">कृषि विभाग →</a>
           </article>
-
           <article class="card">
             <div class="icon">🌦️</div>
             <h3>मौसम की जानकारी</h3>
@@ -157,24 +152,45 @@ if (window.location.pathname === '/admin') {
             <h3>पंचायत परिचय</h3>
             <p>ग्राम पंचायत से जुड़ी आधिकारिक जानकारी यहाँ उपलब्ध कराई जाएगी।</p>
           </article>
-
           <article class="card">
             <div class="icon">🛠️</div>
             <h3>विकास कार्य</h3>
             <p>गाँव में होने वाले विकास कार्यों की जानकारी यहाँ साझा की जाएगी।</p>
           </article>
-
           <article class="card">
             <div class="icon">👥</div>
             <h3>जनसुविधाएँ</h3>
             <p>गाँव की सार्वजनिक सुविधाओं और जरूरी सेवाओं की जानकारी।</p>
           </article>
-
           <article class="card">
             <div class="icon">📣</div>
             <h3>जनसमस्याएँ</h3>
             <p>गाँव की समस्याओं और उनके समाधान से संबंधित अपडेट।</p>
           </article>
+        </div>
+      </section>
+
+      <!-- CALL DIRECTORY -->
+      <section class="section" id="directory">
+        <div class="section-heading">
+          <span>VILLAGE CONTACTS</span>
+          <h2>📞 ग्राम अमीरपुर Call Directory</h2>
+          <p>गाँव के लोगों का नाम या मोबाइल नंबर खोजें और सीधे कॉल करें।</p>
+        </div>
+
+        <div class="directory-box">
+          <input
+            type="search"
+            id="directory-search"
+            placeholder="🔍 नाम या मोबाइल नंबर खोजें..."
+            aria-label="नाम या मोबाइल नंबर खोजें"
+          >
+
+          <p id="directory-status" aria-live="polite">
+            डायरेक्टरी लोड हो रही है...
+          </p>
+
+          <div id="public-directory" class="cards"></div>
         </div>
       </section>
 
@@ -195,7 +211,6 @@ if (window.location.pathname === '/admin') {
             <a class="button" href="tel:9548772433">
               📞 अभी कॉल करें
             </a>
-
             <a
               class="button"
               href="https://wa.me/919548772433"
@@ -220,8 +235,8 @@ if (window.location.pathname === '/admin') {
     </footer>
   `
 
+  // सार्वजनिक समाचार लोड करें
   const newsContainer = document.querySelector('#public-news')
-
   const newsQuery = query(
     collection(db, 'news'),
     orderBy('date', 'desc')
@@ -239,7 +254,6 @@ if (window.location.pathname === '/admin') {
 
       snapshot.forEach((newsDoc) => {
         const item = newsDoc.data()
-
         const article = document.createElement('article')
         article.className = 'card'
 
@@ -260,6 +274,80 @@ if (window.location.pathname === '/admin') {
       console.error('समाचार लोड करने में समस्या:', error)
       newsContainer.textContent =
         'समाचार अभी लोड नहीं हो पाए। कृपया कुछ देर बाद फिर प्रयास करें।'
+    }
+  )
+
+  // Call Directory लोड करें
+  const directoryContainer = document.querySelector('#public-directory')
+  const directoryStatus = document.querySelector('#directory-status')
+  const directorySearch = document.querySelector('#directory-search')
+
+  let allContacts = []
+
+  function renderDirectory(searchText = '') {
+    directoryContainer.replaceChildren()
+
+    const search = searchText.trim().toLowerCase()
+
+    const filteredContacts = allContacts.filter((person) => {
+      const name = String(person.name || '').toLowerCase()
+      const phone = String(person.phone || '')
+
+      return name.includes(search) || phone.includes(search)
+    })
+
+    if (filteredContacts.length === 0) {
+      directoryStatus.textContent = search
+        ? 'आपकी खोज से कोई संपर्क नहीं मिला।'
+        : 'अभी डायरेक्टरी में कोई संपर्क नहीं जोड़ा गया है।'
+      return
+    }
+
+    directoryStatus.textContent =
+      `कुल ${filteredContacts.length} संपर्क मिले।`
+
+    filteredContacts.forEach((person) => {
+      const card = document.createElement('article')
+      card.className = 'card directory-card'
+
+      const icon = document.createElement('div')
+      icon.className = 'icon'
+      icon.textContent = '👤'
+
+      const name = document.createElement('h3')
+      name.textContent = person.name || 'नाम उपलब्ध नहीं'
+
+      const phone = document.createElement('p')
+      phone.textContent = '📱 ' + (person.phone || '')
+
+      const callButton = document.createElement('a')
+      callButton.className = 'button'
+      callButton.href = 'tel:' + String(person.phone || '').replace(/[^\d+]/g, '')
+      callButton.textContent = '📞 कॉल करें'
+
+      card.append(icon, name, phone, callButton)
+      directoryContainer.append(card)
+    })
+  }
+
+  directorySearch.addEventListener('input', () => {
+    renderDirectory(directorySearch.value)
+  })
+
+  onSnapshot(
+    query(collection(db, 'directory'), orderBy('name')),
+    (snapshot) => {
+      allContacts = snapshot.docs.map((personDoc) => ({
+        id: personDoc.id,
+        ...personDoc.data()
+      }))
+
+      renderDirectory(directorySearch.value)
+    },
+    (error) => {
+      console.error('Call Directory लोड करने में समस्या:', error)
+      directoryStatus.textContent =
+        'डायरेक्टरी लोड नहीं हो सकी। Firebase Rules जाँचें।'
     }
   )
 }

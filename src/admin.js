@@ -12,7 +12,8 @@ import {
   deleteDoc,
   doc,
   query,
-  orderBy
+  orderBy,
+  updateDoc
 } from 'firebase/firestore'
 
 const app = document.querySelector('#app')
@@ -31,7 +32,7 @@ app.innerHTML = `
       <section class="admin-welcome">
         <span>ADMINISTRATION</span>
         <h2>वेबसाइट प्रबंधन</h2>
-        <p>गाँव के समाचार यहाँ से प्रकाशित करें।</p>
+        <p>समाचार और गाँव की Call Directory का प्रबंधन करें।</p>
       </section>
 
       <section class="admin-form-card" id="login-card">
@@ -66,6 +67,12 @@ app.innerHTML = `
             <h3 id="news-count">0</h3>
             <p>कुल समाचार</p>
           </div>
+
+          <div class="admin-stat">
+            <span>📞</span>
+            <h3 id="contact-count">0</h3>
+            <p>डायरेक्टरी संपर्क</p>
+          </div>
         </section>
 
         <section class="admin-form-card">
@@ -99,6 +106,42 @@ app.innerHTML = `
           <h2>📋 प्रकाशित समाचार</h2>
           <div id="news-list">समाचार लोड हो रहे हैं...</div>
         </section>
+
+        <section class="admin-form-card" id="directory">
+          <h2>📞 गाँव की Call Directory</h2>
+          <p>गाँव के लोगों का नाम और मोबाइल नंबर यहाँ जोड़ें।</p>
+
+          <form id="contact-form">
+            <input id="contact-id" type="hidden">
+
+            <label for="person-name">व्यक्ति का पूरा नाम</label>
+            <input id="person-name" type="text" required
+              maxlength="100"
+              placeholder="जैसे: राम सिंह">
+
+            <label for="person-phone">मोबाइल नंबर</label>
+            <input id="person-phone" type="tel" required
+              inputmode="numeric"
+              maxlength="10"
+              pattern="[6-9][0-9]{9}"
+              placeholder="10 अंकों का मोबाइल नंबर">
+
+            <button type="submit" class="admin-button" id="contact-submit">
+              संपर्क जोड़ें
+            </button>
+
+            <button type="button" id="cancel-edit" hidden>
+              बदलाव रद्द करें
+            </button>
+
+            <p id="contact-message" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="admin-form-card">
+          <h2>👥 डायरेक्टरी में शामिल लोग</h2>
+          <div id="directory-list">डायरेक्टरी लोड हो रही है...</div>
+        </section>
       </div>
     </main>
   </div>
@@ -109,7 +152,12 @@ const dashboard = document.querySelector('#dashboard')
 const loginMessage = document.querySelector('#login-message')
 const formMessage = document.querySelector('#form-message')
 const newsList = document.querySelector('#news-list')
+const contactForm = document.querySelector('#contact-form')
+const contactMessage = document.querySelector('#contact-message')
+const directoryList = document.querySelector('#directory-list')
+
 const newsCollection = collection(db, 'news')
+const directoryCollection = collection(db, 'directory')
 
 let currentUser = null
 
@@ -117,6 +165,13 @@ function showMessage(element, message) {
   element.textContent = message
 }
 
+function makeTextElement(tag, text) {
+  const element = document.createElement(tag)
+  element.textContent = text
+  return element
+}
+
+// समाचार लोड करें
 async function renderNews() {
   newsList.textContent = 'समाचार लोड हो रहे हैं...'
 
@@ -137,14 +192,11 @@ async function renderNews() {
       const card = document.createElement('article')
       card.className = 'admin-news-item'
 
-      const title = document.createElement('h3')
-      title.textContent = item.title || 'गाँव का समाचार'
-
-      const category = document.createElement('p')
-      category.textContent = 'श्रेणी: ' + (item.category || 'सामान्य')
-
-      const description = document.createElement('p')
-      description.textContent = item.description || ''
+      card.append(
+        makeTextElement('h3', item.title || 'गाँव का समाचार'),
+        makeTextElement('p', 'श्रेणी: ' + (item.category || 'सामान्य')),
+        makeTextElement('p', item.description || '')
+      )
 
       const removeButton = document.createElement('button')
       removeButton.className = 'delete-button'
@@ -152,7 +204,6 @@ async function renderNews() {
 
       removeButton.addEventListener('click', async () => {
         if (!currentUser) return
-
         if (!confirm('क्या आप यह समाचार हटाना चाहते हैं?')) return
 
         try {
@@ -161,20 +212,146 @@ async function renderNews() {
           await renderNews()
         } catch (error) {
           console.error(error)
-          showMessage(formMessage, 'समाचार नहीं हट पाया। कृपया फिर प्रयास करें।')
+          showMessage(formMessage, 'समाचार नहीं हट पाया।')
         }
       })
 
-      card.append(title, category, description, removeButton)
+      card.append(removeButton)
       newsList.append(card)
     })
   } catch (error) {
     console.error(error)
-    newsList.textContent =
-      'समाचार लोड नहीं हुए। Firebase सेटिंग और इंटरनेट कनेक्शन जाँचें।'
+    newsList.textContent = 'समाचार लोड नहीं हुए। Firebase Rules जाँचें।'
   }
 }
 
+// डायरेक्टरी लोड करें
+async function renderDirectory() {
+  directoryList.textContent = 'डायरेक्टरी लोड हो रही है...'
+
+  try {
+    const snapshot = await getDocs(
+      query(directoryCollection, orderBy('name'))
+    )
+
+    directoryList.replaceChildren()
+    document.querySelector('#contact-count').textContent = snapshot.size
+
+    if (snapshot.empty) {
+      directoryList.textContent = 'अभी कोई संपर्क नहीं जोड़ा गया है।'
+      return
+    }
+
+    snapshot.forEach((personDoc) => {
+      const person = personDoc.data()
+      const card = document.createElement('article')
+      card.className = 'admin-news-item'
+
+      card.append(
+        makeTextElement('h3', person.name || 'नाम उपलब्ध नहीं'),
+        makeTextElement('p', 'मोबाइल: ' + (person.phone || ''))
+      )
+
+      const editButton = document.createElement('button')
+      editButton.className = 'admin-button'
+      editButton.textContent = 'बदलें'
+
+      editButton.addEventListener('click', () => {
+        document.querySelector('#contact-id').value = personDoc.id
+        document.querySelector('#person-name').value = person.name || ''
+        document.querySelector('#person-phone').value = person.phone || ''
+        document.querySelector('#contact-submit').textContent = 'बदलाव सेव करें'
+        document.querySelector('#cancel-edit').hidden = false
+        document.querySelector('#person-name').focus()
+      })
+
+      const deleteButton = document.createElement('button')
+      deleteButton.className = 'delete-button'
+      deleteButton.textContent = 'हटाएँ'
+
+      deleteButton.addEventListener('click', async () => {
+        if (!currentUser) return
+
+        if (!confirm('क्या इस व्यक्ति का नंबर हटाना चाहते हैं?')) return
+
+        try {
+          await deleteDoc(doc(db, 'directory', personDoc.id))
+          showMessage(contactMessage, 'संपर्क हटा दिया गया है।')
+          await renderDirectory()
+        } catch (error) {
+          console.error(error)
+          showMessage(contactMessage, 'संपर्क नहीं हट पाया।')
+        }
+      })
+
+      card.append(editButton, deleteButton)
+      directoryList.append(card)
+    })
+  } catch (error) {
+    console.error(error)
+    directoryList.textContent =
+      'डायरेक्टरी लोड नहीं हुई। Firebase Rules और इंटरनेट जाँचें।'
+  }
+}
+
+// नया संपर्क जोड़ें या बदलें
+contactForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  if (!currentUser) {
+    showMessage(contactMessage, 'पहले Admin Login करें।')
+    return
+  }
+
+  const name = document.querySelector('#person-name').value.trim()
+  const phone = document.querySelector('#person-phone').value.trim()
+  const contactId = document.querySelector('#contact-id').value
+
+  if (!name || !/^[6-9]\d{9}$/.test(phone)) {
+    showMessage(contactMessage, 'सही नाम और 10 अंकों का मोबाइल नंबर लिखें।')
+    return
+  }
+
+  try {
+    showMessage(contactMessage, 'संपर्क सेव हो रहा है...')
+
+    if (contactId) {
+      await updateDoc(doc(db, 'directory', contactId), {
+        name,
+        phone,
+        updatedAt: Date.now()
+      })
+      showMessage(contactMessage, 'संपर्क अपडेट हो गया है।')
+    } else {
+      await addDoc(directoryCollection, {
+        name,
+        phone,
+        createdAt: Date.now()
+      })
+      showMessage(contactMessage, 'नया संपर्क जोड़ दिया गया है।')
+    }
+
+    contactForm.reset()
+    document.querySelector('#contact-id').value = ''
+    document.querySelector('#contact-submit').textContent = 'संपर्क जोड़ें'
+    document.querySelector('#cancel-edit').hidden = true
+
+    await renderDirectory()
+  } catch (error) {
+    console.error(error)
+    showMessage(contactMessage, 'संपर्क सेव नहीं हुआ। Firebase Rules जाँचें।')
+  }
+})
+
+document.querySelector('#cancel-edit').addEventListener('click', () => {
+  contactForm.reset()
+  document.querySelector('#contact-id').value = ''
+  document.querySelector('#contact-submit').textContent = 'संपर्क जोड़ें'
+  document.querySelector('#cancel-edit').hidden = true
+  showMessage(contactMessage, '')
+})
+
+// Admin Login
 document.querySelector('#login-form').addEventListener('submit', async (event) => {
   event.preventDefault()
   showMessage(loginMessage, 'लॉगिन हो रहा है...')
@@ -191,15 +368,17 @@ document.querySelector('#login-form').addEventListener('submit', async (event) =
   }
 })
 
+// Logout
 document.querySelector('#logout-button').addEventListener('click', async () => {
   await signOut(auth)
 })
 
+// नया समाचार प्रकाशित करें
 document.querySelector('#news-form').addEventListener('submit', async (event) => {
   event.preventDefault()
 
   if (!currentUser) {
-    showMessage(formMessage, 'पहले Admin लॉगिन करें।')
+    showMessage(formMessage, 'पहले Admin Login करें।')
     return
   }
 
@@ -225,13 +404,11 @@ document.querySelector('#news-form').addEventListener('submit', async (event) =>
     await renderNews()
   } catch (error) {
     console.error(error)
-    showMessage(
-      formMessage,
-      'समाचार प्रकाशित नहीं हुआ। Firebase Rules और लॉगिन जाँचें।'
-    )
+    showMessage(formMessage, 'समाचार प्रकाशित नहीं हुआ। Firebase Rules जाँचें।')
   }
 })
 
+// Login स्थिति
 onAuthStateChanged(auth, async (user) => {
   currentUser = user
 
@@ -241,9 +418,13 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     document.querySelector('#logged-in-user').textContent =
       'लॉगिन: ' + user.email
+
     await renderNews()
+    await renderDirectory()
   } else {
     newsList.replaceChildren()
+    directoryList.replaceChildren()
     document.querySelector('#news-count').textContent = '0'
+    document.querySelector('#contact-count').textContent = '0'
   }
 })
