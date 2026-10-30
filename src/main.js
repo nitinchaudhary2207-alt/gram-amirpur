@@ -1,5 +1,7 @@
 import "./style.css";
+
 import { db } from "./firebase.js";
+
 import {
   collection,
   onSnapshot,
@@ -7,10 +9,15 @@ import {
   orderBy
 } from "firebase/firestore";
 
+import {
+  renderGallery,
+  loadGallery
+} from "./pages/gallery.js";
+
 // Current page
 const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
-// Admin Panel: keep the existing admin system
+// Admin Panel
 if (path === "/admin") {
   import("./admin.js");
 } else {
@@ -20,6 +27,7 @@ if (path === "/admin") {
     ["/", "होम"],
     ["/about", "गाँव का परिचय"],
     ["/news", "गाँव के समाचार"],
+    ["/gallery", "फोटो गैलरी"],
     ["/schemes", "सरकारी योजनाएँ"],
     ["/farmers", "किसान कॉर्नर"],
     ["/notices", "सूचनाएँ"],
@@ -36,19 +44,28 @@ if (path === "/admin") {
         <section class="hero">
           <div class="hero-content">
             <span class="tag">🌿 डिजिटल ग्राम अमीरपुर</span>
+
             <h2>
               अपने गाँव की<br>
               <span>अपनी वेबसाइट</span>
             </h2>
+
             <p>
               ग्राम अमीरपुर की जानकारी, गाँव के समाचार,
               सरकारी योजनाएँ और जरूरी सूचनाएँ अब एक ही जगह।
             </p>
+
             <div class="hero-buttons">
-              <a class="button" href="/about">गाँव के बारे में जानें →</a>
-              <a class="button button-gold" href="/news">ताजा समाचार देखें</a>
+              <a class="button" href="/about">
+                गाँव के बारे में जानें →
+              </a>
+
+              <a class="button button-gold" href="/news">
+                ताजा समाचार देखें
+              </a>
             </div>
           </div>
+
           <div class="hero-icon">🏡</div>
         </section>
 
@@ -72,6 +89,13 @@ if (path === "/admin") {
               <h3>गाँव के समाचार</h3>
               <p>गाँव से जुड़ी खबरें और महत्वपूर्ण अपडेट।</p>
               <span>समाचार देखें →</span>
+            </a>
+
+            <a class="card" href="/gallery">
+              <div class="icon">📸</div>
+              <h3>फोटो गैलरी</h3>
+              <p>गाँव की तस्वीरें और यादगार पल देखें।</p>
+              <span>फोटो देखें →</span>
             </a>
 
             <a class="card" href="/schemes">
@@ -101,6 +125,13 @@ if (path === "/admin") {
               <p>उपलब्ध संपर्क और जरूरी जानकारी खोजें।</p>
               <span>डायरेक्टरी खोलें →</span>
             </a>
+
+            <a class="card" href="/notices">
+              <div class="icon">📢</div>
+              <h3>महत्वपूर्ण सूचनाएँ</h3>
+              <p>गाँव से जुड़ी जरूरी सूचनाएँ देखें।</p>
+              <span>सूचनाएँ देखें →</span>
+            </a>
           </div>
         </section>
 
@@ -109,9 +140,13 @@ if (path === "/admin") {
             <h2>गाँव की ताजा खबरें</h2>
             <p>ग्राम अमीरपुर से संबंधित नवीनतम समाचार।</p>
           </div>
+
           <div id="home-news" class="grid">
-            <div class="card"><p>समाचार लोड हो रहे हैं...</p></div>
+            <div class="card">
+              <p>समाचार लोड हो रहे हैं...</p>
+            </div>
           </div>
+
           <p class="center-link">
             <a class="button" href="/news">सभी समाचार देखें →</a>
           </p>
@@ -164,11 +199,20 @@ if (path === "/admin") {
             <h2>ताजा समाचार</h2>
             <p>प्रकाशित समाचार यहाँ दिखाई देंगे।</p>
           </div>
+
           <div id="news-list" class="grid">
-            <div class="card"><p>समाचार लोड हो रहे हैं...</p></div>
+            <div class="card">
+              <p>समाचार लोड हो रहे हैं...</p>
+            </div>
           </div>
         </section>
       `
+    },
+
+    "/gallery": {
+      title: "गाँव की फोटो गैलरी",
+      subtitle: "ग्राम अमीरपुर की तस्वीरें और यादगार पल",
+      content: renderGallery()
     },
 
     "/schemes": {
@@ -180,25 +224,34 @@ if (path === "/admin") {
             <div class="card">
               <div class="icon">🌾</div>
               <h3>पीएम किसान सम्मान निधि</h3>
-              <p>किसान सम्मान निधि से संबंधित जानकारी और स्थिति जाँचने की सुविधा।</p>
-              <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
+              <p>किसान सम्मान निधि से संबंधित जानकारी प्राप्त करें।</p>
+              <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">
+                आधिकारिक वेबसाइट →
+              </a>
             </div>
 
             <div class="card">
               <div class="icon">🏠</div>
               <h3>प्रधानमंत्री आवास योजना</h3>
               <p>आवास योजनाओं से संबंधित आधिकारिक जानकारी प्राप्त करें।</p>
-              <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
+              <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">
+                आधिकारिक वेबसाइट →
+              </a>
             </div>
 
             <div class="card">
               <div class="icon">🪪</div>
               <h3>डिजिटल सेवाएँ</h3>
               <p>सरकारी सेवाओं और ऑनलाइन सुविधाओं की जानकारी।</p>
-              <a href="https://india.gov.in/" target="_blank" rel="noopener noreferrer">भारत सरकार का पोर्टल →</a>
+              <a href="https://india.gov.in/" target="_blank" rel="noopener noreferrer">
+                भारत सरकार का पोर्टल →
+              </a>
             </div>
           </div>
-          <p class="small">योजनाओं की पात्रता और नियम संबंधित आधिकारिक वेबसाइट पर जाँचें।</p>
+
+          <p class="small">
+            योजनाओं की पात्रता और नियम संबंधित आधिकारिक वेबसाइट पर जाँचें।
+          </p>
         </section>
       `
     },
@@ -212,19 +265,25 @@ if (path === "/admin") {
             <div class="card">
               <div class="icon">🌱</div>
               <h3>फसल की जानकारी</h3>
-              <p>फसलों की बुवाई, बीज और खेती की तकनीकों से संबंधित जानकारी।</p>
+              <p>फसलों की बुवाई, बीज और खेती की तकनीकों की जानकारी।</p>
             </div>
+
             <div class="card">
               <div class="icon">🌦️</div>
               <h3>मौसम की जानकारी</h3>
-              <p>खेती के काम की योजना बनाने के लिए मौसम की जानकारी देखें।</p>
-              <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">मौसम विभाग →</a>
+              <p>खेती के काम की योजना बनाने के लिए मौसम देखें।</p>
+              <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">
+                मौसम विभाग →
+              </a>
             </div>
+
             <div class="card">
               <div class="icon">💰</div>
               <h3>किसान योजनाएँ</h3>
-              <p>कृषि और किसान कल्याण से जुड़ी सरकारी योजनाओं की जानकारी।</p>
-              <a href="https://agriwelfare.gov.in/" target="_blank" rel="noopener noreferrer">कृषि विभाग →</a>
+              <p>कृषि और किसान कल्याण से जुड़ी सरकारी योजनाएँ।</p>
+              <a href="https://agriwelfare.gov.in/" target="_blank" rel="noopener noreferrer">
+                कृषि विभाग →
+              </a>
             </div>
           </div>
         </section>
@@ -238,8 +297,9 @@ if (path === "/admin") {
         <section class="section">
           <div class="section-heading">
             <h2>सूचना बोर्ड</h2>
-            <p>नई सूचनाएँ यहाँ प्रकाशित की जा सकती हैं।</p>
+            <p>गाँव की महत्वपूर्ण सूचनाएँ यहाँ उपलब्ध होंगी।</p>
           </div>
+
           <div id="notice-list" class="grid">
             <div class="card">
               <div class="icon">📢</div>
@@ -262,12 +322,16 @@ if (path === "/admin") {
               <h3>पंचायत की जानकारी</h3>
               <p>ग्राम पंचायत से संबंधित प्रमाणित जानकारी यहाँ उपलब्ध कराई जा सकती है।</p>
             </div>
+
             <div class="card">
               <div class="icon">📄</div>
               <h3>सरकारी सेवाएँ</h3>
               <p>उत्तर प्रदेश की सरकारी सेवाओं की जानकारी प्राप्त करें।</p>
-              <a href="https://up.gov.in/" target="_blank" rel="noopener noreferrer">उत्तर प्रदेश सरकार →</a>
+              <a href="https://up.gov.in/" target="_blank" rel="noopener noreferrer">
+                उत्तर प्रदेश सरकार →
+              </a>
             </div>
+
             <div class="card">
               <div class="icon">📣</div>
               <h3>जनहित सूचनाएँ</h3>
@@ -284,10 +348,18 @@ if (path === "/admin") {
       content: `
         <section class="section">
           <div class="search-box">
-            <input id="directory-search" type="search" placeholder="नाम या पद से खोजें..." aria-label="डायरेक्टरी खोजें">
+            <input
+              id="directory-search"
+              type="search"
+              placeholder="नाम या पद से खोजें..."
+              aria-label="डायरेक्टरी खोजें"
+            >
           </div>
+
           <div id="directory-list" class="grid">
-            <div class="card"><p>डायरेक्टरी लोड हो रही है...</p></div>
+            <div class="card">
+              <p>डायरेक्टरी लोड हो रही है...</p>
+            </div>
           </div>
         </section>
       `
@@ -331,8 +403,12 @@ if (path === "/admin") {
             <span>ग्राम अमीरपुर</span>
           </a>
 
-          <button class="menu-toggle" id="menu-toggle"
-            aria-label="मेन्यू खोलें" aria-expanded="false">☰</button>
+          <button
+            class="menu-toggle"
+            id="menu-toggle"
+            aria-label="मेन्यू खोलें"
+            aria-expanded="false"
+          >☰</button>
 
           <nav class="main-nav" id="main-nav">
             ${navLinks.map(([url, label]) => `
@@ -340,6 +416,7 @@ if (path === "/admin") {
                 ${label}
               </a>
             `).join("")}
+
             <a href="/admin">Admin</a>
           </nav>
         </div>
@@ -353,11 +430,14 @@ if (path === "/admin") {
         <h2>🌿 ग्राम अमीरपुर</h2>
         <p>अपना गाँव, अपनी पहचान</p>
         <p>जिला मथुरा, उत्तर प्रदेश</p>
+
         <p>
           <a href="/">होम</a> ·
           <a href="/about">गाँव का परिचय</a> ·
+          <a href="/gallery">फोटो गैलरी</a> ·
           <a href="/contact">संपर्क</a>
         </p>
+
         <p>© ${new Date().getFullYear()} ग्राम अमीरपुर</p>
       </footer>
     `;
@@ -451,6 +531,7 @@ if (path === "/admin") {
       }).join("");
     }, error => {
       console.error("News loading error:", error);
+
       target.innerHTML = `
         <div class="card">
           <p>समाचार लोड नहीं हो सके। कृपया बाद में प्रयास करें।</p>
@@ -465,6 +546,11 @@ if (path === "/admin") {
 
   if (path === "/news") {
     loadNews("news-list", 30);
+  }
+
+  // Load photo gallery
+  if (path === "/gallery") {
+    loadGallery();
   }
 
   // Load directory from Firestore
@@ -512,7 +598,9 @@ if (path === "/admin") {
           <article class="card">
             <div class="icon">👤</div>
             <h3>${escapeHTML(name)}</h3>
+
             ${role ? `<p>${escapeHTML(role)}</p>` : ""}
+
             ${phone ? `
               <p>
                 <a href="tel:${escapeHTML(phone)}">
@@ -536,6 +624,7 @@ if (path === "/admin") {
       renderPeople();
     }, error => {
       console.error("Directory loading error:", error);
+
       target.innerHTML = `
         <div class="card">
           <p>डायरेक्टरी लोड नहीं हो सकी।</p>
