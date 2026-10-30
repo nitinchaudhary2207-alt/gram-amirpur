@@ -32,7 +32,7 @@ app.innerHTML = `
       <section class="admin-welcome">
         <span>ADMINISTRATION</span>
         <h2>वेबसाइट प्रबंधन</h2>
-        <p>समाचार और गाँव की Call Directory का प्रबंधन करें।</p>
+        <p>समाचार, Call Directory और फोटो गैलरी का प्रबंधन करें।</p>
       </section>
 
       <section class="admin-form-card" id="login-card">
@@ -73,8 +73,51 @@ app.innerHTML = `
             <h3 id="contact-count">0</h3>
             <p>डायरेक्टरी संपर्क</p>
           </div>
+
+          <div class="admin-stat">
+            <span>📸</span>
+            <h3 id="gallery-count">0</h3>
+            <p>कुल फोटो</p>
+          </div>
         </section>
 
+        <!-- PHOTO GALLERY UPLOAD -->
+        <section class="admin-form-card" id="photo-gallery">
+          <h2>📸 नई फोटो अपलोड करें</h2>
+          <p>फोटो और उसका शीर्षक भरकर गैलरी में प्रकाशित करें।</p>
+
+          <form id="photo-form">
+            <label for="photo-title">फोटो का शीर्षक</label>
+            <input id="photo-title" type="text" required
+              maxlength="150"
+              placeholder="जैसे: गाँव का वार्षिक कार्यक्रम">
+
+            <label for="photo-file">फोटो चुनें</label>
+            <input id="photo-file" type="file" required
+              accept="image/jpeg,image/png,image/webp">
+
+            <p style="font-size:13px;color:#666">
+              JPG, PNG या WebP फोटो चुनें। बेहतर परिणाम के लिए
+              3 MB से छोटी फोटो इस्तेमाल करें।
+            </p>
+
+            <button type="submit" class="admin-button" id="photo-submit">
+              📤 फोटो अपलोड करें
+            </button>
+
+            <p id="photo-message" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <!-- PHOTO LIST -->
+        <section class="admin-form-card">
+          <h2>🖼️ अपलोड की गई फोटो</h2>
+          <div id="gallery-admin-list">
+            फोटो लोड हो रही हैं...
+          </div>
+        </section>
+
+        <!-- NEWS FORM -->
         <section class="admin-form-card">
           <h2>➕ नया समाचार जोड़ें</h2>
           <form id="news-form">
@@ -107,6 +150,7 @@ app.innerHTML = `
           <div id="news-list">समाचार लोड हो रहे हैं...</div>
         </section>
 
+        <!-- DIRECTORY FORM -->
         <section class="admin-form-card" id="directory">
           <h2>📞 गाँव की Call Directory</h2>
           <p>गाँव के लोगों का नाम और मोबाइल नंबर यहाँ जोड़ें।</p>
@@ -156,8 +200,14 @@ const contactForm = document.querySelector('#contact-form')
 const contactMessage = document.querySelector('#contact-message')
 const directoryList = document.querySelector('#directory-list')
 
+const photoForm = document.querySelector('#photo-form')
+const photoMessage = document.querySelector('#photo-message')
+const galleryAdminList = document.querySelector('#gallery-admin-list')
+const photoSubmit = document.querySelector('#photo-submit')
+
 const newsCollection = collection(db, 'news')
 const directoryCollection = collection(db, 'directory')
+const galleryCollection = collection(db, 'gallery')
 
 let currentUser = null
 
@@ -171,7 +221,278 @@ function makeTextElement(tag, text) {
   return element
 }
 
-// समाचार लोड करें
+function formatDate(value) {
+  if (!value) return 'तारीख उपलब्ध नहीं'
+
+  const date = typeof value === 'number'
+    ? new Date(value)
+    : value.toDate
+      ? value.toDate()
+      : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'तारीख उपलब्ध नहीं'
+  }
+
+  return date.toLocaleDateString('hi-IN', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
+// ============================
+// PHOTO GALLERY
+// ============================
+
+// फोटो लोड करें
+async function renderGalleryAdmin() {
+  galleryAdminList.textContent = 'फोटो लोड हो रही हैं...'
+
+  try {
+    const snapshot = await getDocs(
+      query(galleryCollection, orderBy('createdAt', 'desc'))
+    )
+
+    galleryAdminList.replaceChildren()
+    document.querySelector('#gallery-count').textContent = snapshot.size
+
+    if (snapshot.empty) {
+      galleryAdminList.textContent = 'अभी कोई फोटो अपलोड नहीं की गई है।'
+      return
+    }
+
+    snapshot.forEach((photoDoc) => {
+      const photo = photoDoc.data()
+
+      const card = document.createElement('article')
+      card.className = 'admin-news-item'
+
+      const image = document.createElement('img')
+      image.src = photo.url || ''
+      image.alt = photo.title || 'ग्राम अमीरपुर फोटो'
+      image.loading = 'lazy'
+      image.style.width = '100%'
+      image.style.maxWidth = '350px'
+      image.style.height = '220px'
+      image.style.objectFit = 'cover'
+      image.style.borderRadius = '12px'
+      image.style.display = 'block'
+      image.style.marginBottom = '12px'
+
+      card.append(
+        image,
+        makeTextElement('h3', photo.title || 'ग्राम अमीरपुर'),
+        makeTextElement('p', 'अपलोड की तारीख: ' + formatDate(photo.createdAt))
+      )
+
+      const removeButton = document.createElement('button')
+      removeButton.className = 'delete-button'
+      removeButton.textContent = '🗑️ फोटो हटाएँ'
+
+      removeButton.addEventListener('click', async () => {
+        if (!currentUser) {
+          showMessage(photoMessage, 'पहले Admin Login करें।')
+          return
+        }
+
+        const confirmed = confirm(
+          'क्या आप यह फोटो वेबसाइट से हटाना चाहते हैं?'
+        )
+
+        if (!confirmed) return
+
+        removeButton.disabled = true
+        removeButton.textContent = 'हटाया जा रहा है...'
+
+        try {
+          // पहले Cloudinary से फोटो हटाएँ
+          if (photo.publicId) {
+            const token = await currentUser.getIdToken()
+
+            const response = await fetch('/api/upload-photo', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                action: 'delete',
+                publicId: photo.publicId
+              })
+            })
+
+            const result = await response.json()
+
+            if (!response.ok) {
+              throw new Error(result.error || 'फोटो Cloudinary से नहीं हट पाई।')
+            }
+          }
+
+          // फिर Firestore का रिकॉर्ड हटाएँ
+          await deleteDoc(doc(db, 'gallery', photoDoc.id))
+
+          showMessage(photoMessage, 'फोटो गैलरी से हटा दी गई है।')
+          await renderGalleryAdmin()
+        } catch (error) {
+          console.error('Photo delete error:', error)
+          showMessage(
+            photoMessage,
+            error.message || 'फोटो हटाने में समस्या आई।'
+          )
+          removeButton.disabled = false
+          removeButton.textContent = '🗑️ फोटो हटाएँ'
+        }
+      })
+
+      card.append(removeButton)
+      galleryAdminList.append(card)
+    })
+  } catch (error) {
+    console.error('Gallery admin error:', error)
+    galleryAdminList.textContent =
+      'फोटो लोड नहीं हुईं। Firestore Rules और इंटरनेट जाँचें।'
+  }
+}
+
+// चुनी हुई फोटो को Data URL में बदलें
+function readPhotoAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('फोटो पढ़ी नहीं जा सकी।'))
+
+    reader.readAsDataURL(file)
+  })
+}
+
+// नई फोटो अपलोड करें
+photoForm.addEventListener('submit', async (event) => {
+  event.preventDefault()
+
+  if (!currentUser) {
+    showMessage(photoMessage, 'पहले Admin Login करें।')
+    return
+  }
+
+  const title = document.querySelector('#photo-title').value.trim()
+  const fileInput = document.querySelector('#photo-file')
+  const file = fileInput.files[0]
+
+  if (!title) {
+    showMessage(photoMessage, 'फोटो का शीर्षक लिखें।')
+    return
+  }
+
+  if (!file) {
+    showMessage(photoMessage, 'पहले फोटो चुनें।')
+    return
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+
+  if (!allowedTypes.includes(file.type)) {
+    showMessage(photoMessage, 'केवल JPG, PNG या WebP फोटो चुनें।')
+    return
+  }
+
+  // Base64 और API request के आकार को सीमित रखने के लिए
+  if (file.size > 3 * 1024 * 1024) {
+    showMessage(
+      photoMessage,
+      'फोटो 3 MB से बड़ी है। छोटी फोटो चुनें और फिर प्रयास करें।'
+    )
+    return
+  }
+
+  photoSubmit.disabled = true
+  photoSubmit.textContent = 'फोटो अपलोड हो रही है...'
+  showMessage(photoMessage, 'कृपया प्रतीक्षा करें...')
+
+  let uploadedPublicId = ''
+
+  try {
+    const fileData = await readPhotoAsDataURL(file)
+    const token = await currentUser.getIdToken()
+
+    // Cloudinary पर फोटो अपलोड करें
+    const response = await fetch('/api/upload-photo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        file: fileData,
+        title
+      })
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result.error || 'फोटो अपलोड नहीं हो पाई।')
+    }
+
+    if (!result.url || !result.publicId) {
+      throw new Error('अपलोड API से फोटो की जानकारी पूरी नहीं मिली।')
+    }
+
+    uploadedPublicId = result.publicId
+
+    // Firestore में फोटो का रिकॉर्ड सेव करें
+    await addDoc(galleryCollection, {
+      title: result.title || title,
+      url: result.url,
+      publicId: result.publicId,
+      createdAt: Date.now(),
+      uploadedBy: currentUser.uid
+    })
+
+    photoForm.reset()
+    showMessage(photoMessage, 'फोटो सफलतापूर्वक अपलोड और प्रकाशित हो गई!')
+
+    await renderGalleryAdmin()
+  } catch (error) {
+    console.error('Photo upload error:', error)
+
+    // यदि Cloudinary upload सफल हुआ, लेकिन Firestore save विफल हुआ,
+    // तो फोटो को Cloudinary से हटाने का प्रयास करें।
+    if (uploadedPublicId && currentUser) {
+      try {
+        const token = await currentUser.getIdToken()
+
+        await fetch('/api/upload-photo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: 'delete',
+            publicId: uploadedPublicId
+          })
+        })
+      } catch (cleanupError) {
+        console.error('Photo cleanup error:', cleanupError)
+      }
+    }
+
+    showMessage(
+      photoMessage,
+      error.message || 'फोटो अपलोड नहीं हो पाई। दोबारा प्रयास करें।'
+    )
+  } finally {
+    photoSubmit.disabled = false
+    photoSubmit.textContent = '📤 फोटो अपलोड करें'
+  }
+})
+
+// ============================
+// NEWS
+// ============================
+
 async function renderNews() {
   newsList.textContent = 'समाचार लोड हो रहे हैं...'
 
@@ -225,7 +546,10 @@ async function renderNews() {
   }
 }
 
-// डायरेक्टरी लोड करें
+// ============================
+// DIRECTORY
+// ============================
+
 async function renderDirectory() {
   directoryList.textContent = 'डायरेक्टरी लोड हो रही है...'
 
@@ -351,7 +675,10 @@ document.querySelector('#cancel-edit').addEventListener('click', () => {
   showMessage(contactMessage, '')
 })
 
-// Admin Login
+// ============================
+// LOGIN
+// ============================
+
 document.querySelector('#login-form').addEventListener('submit', async (event) => {
   event.preventDefault()
   showMessage(loginMessage, 'लॉगिन हो रहा है...')
@@ -421,10 +748,14 @@ onAuthStateChanged(auth, async (user) => {
 
     await renderNews()
     await renderDirectory()
+    await renderGalleryAdmin()
   } else {
     newsList.replaceChildren()
     directoryList.replaceChildren()
+    galleryAdminList.replaceChildren()
+
     document.querySelector('#news-count').textContent = '0'
     document.querySelector('#contact-count').textContent = '0'
+    document.querySelector('#gallery-count').textContent = '0'
   }
 })
