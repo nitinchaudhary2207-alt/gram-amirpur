@@ -530,3 +530,387 @@ footer small {
     padding: 18px;
   }
 }
+/* Gram Amirpur - New Page Design */
+
+.site-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5eee7;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  width: min(1200px, 92%);
+  margin: 0 auto;
+}
+
+.header-inner {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.site-header .brand {
+  color: #18352c;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 21px;
+}
+
+.brand-icon {
+  font-size: 30px;
+}
+
+.menu-toggle {
+  display: none;
+  border: 0;
+  border-radius: 8px;
+  background: #174d36;
+  color: white;
+  padding: 9px 12px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.main-nav a {
+  padding: 9px 10px;
+  color: white;
+  background: #174d36;
+  text-decoration: none;
+  font-size: 13px;
+  border-radius: 7px;
+}
+
+.main-nav a:hover {
+  background: #2b6a4c;
+}
+
+.page-heading {
+  padding: 35px 0;
+  background: #eaf4e9;
+  text-align: center;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: #174d36;
+  font-size: clamp(26px, 4vw, 38px);
+}
+
+.page-heading p {
+  margin-bottom: 0;
+  color: #68776e;
+}
+
+.page-content {
+  min-height: 45vh;
+  padding-top: 28px;
+  padding-bottom: 45px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+a.card {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+a.card span {
+  color: #267548;
+  font-weight: 700;
+}
+
+.page-content .section {
+  padding: 35px 0;
+}
+
+.site-footer {
+  padding: 30px 7%;
+  background: #123b2b;
+  color: white;
+  text-align: center;
+}
+
+.site-footer p {
+  color: #d3e4d8;
+  line-height: 1.8;
+}
+
+.site-footer a {
+  color: #c6ed9e;
+}
+
+@media (max-width: 1000px) {
+  .header-inner {
+    flex-wrap: wrap;
+    padding: 12px 0;
+  }
+
+  .main-nav {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .main-nav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .main-nav.show {
+    display: flex;
+  }
+
+  .main-nav a {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Gram Amirpur Premium Hero Banner */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 480px;
+  padding: 70px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  border-radius: 0 0 30px 30px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 42, 28, 0.94) 0%,
+      rgba(7, 42, 28, 0.78) 55%,
+      rgba(7, 42, 28, 0.20) 100%
+    ),
+    url("/amirpur-gate.jpg") center center / contain no-repeat;
+
+  color: #ffffff;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+}
+
+.hero .tag {
+  display: inline-block;
+  padding: 9px 16px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 215, 120, 0.65);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.10);
+  color: #ffe09a;
+  font-weight: 700;
+}
+
+.hero h2 {
+  color: #ffffff;
+  font-size: clamp(38px, 5vw, 66px);
+  line-height: 1.25;
+  margin: 0 0 20px;
+  font-weight: 900;
+}
+
+.hero h2 span {
+  color: #ffd36b;
+}
+
+.hero p {
+  color: #f0f5f1;
+  font-size: 18px;
+  line-height: 1.9;
+  max-width: 620px;
+}
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.hero .button {
+  display: inline-block;
+  padding: 13px 22px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #145437;
+  text-decoration: none;
+  font-weight: 800;
+  transition: 0.25s ease;
+}
+
+.hero .button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+}
+
+.hero .button-gold {
+  background: #f5c85c;
+  color: #183b2b;
+}
+
+.hero-icon {
+  font-size: 100px;
+  opacity: 0.9;
+}
+
+@media (max-width: 700px) {
+  .hero {
+    min-height: 420px;
+    padding: 55px 7%;
+    border-radius: 0 0 20px 20px;
+    background-position: center;
+  }
+
+  .hero h2 {
+    font-size: 38px;
+  }
+
+  .hero p {
+    font-size: 16px;
+  }
+
+  .hero-icon {
+    display: none;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* Fix Gram Amirpur Hero Image */
+.hero {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 530px;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+.hero-icon {
+  display: none !important;
+}
+
+.hero-content {
+  max-width: 750px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 701px) {
+  .hero {
+    background-position: 55% center !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero {
+    min-height: 460px;
+    padding: 45px 6%;
+    background-position: center center !important;
+  }
+}
+/* Gram Amirpur - Full Image Fit Banner */
+
+.hero {
+  width: 100%;
+  min-height: unset !important;
+  height: auto !important;
+  aspect-ratio: 2 / 1;
+
+  box-sizing: border-box;
+  padding: 0 6%;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(7, 42, 28, 0.88) 0%,
+      rgba(7, 42, 28, 0.60) 45%,
+      rgba(7, 42, 28, 0.08) 100%
+    ),
+    url("/amirpur-gate.jpg") !important;
+
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
+}
+
+.hero-content {
+  width: 65%;
+  max-width: 750px;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-icon {
+  display: none !important;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .hero {
+    aspect-ratio: 4 / 5;
+    padding: 25px 6%;
+
+    background-position: center center !important;
+  }
+
+  .hero-content {
+    width: 100%;
+  }
+
+  .hero h2 {
+    font-size: clamp(30px, 8vw, 42px);
+  }
+
+  .hero p {
+    font-size: 15px;
+  }
+}

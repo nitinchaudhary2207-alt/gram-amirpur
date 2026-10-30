@@ -1,353 +1,550 @@
-import './style.css'
-import { db } from './firebase.js'
+import "./style.css";
+import { db } from "./firebase.js";
 import {
   collection,
   onSnapshot,
   query,
   orderBy
-} from 'firebase/firestore'
+} from "firebase/firestore";
 
-if (window.location.pathname.replace(/\/$/, '') === '/admin') {
-  import('./admin.js')
+// Current page
+const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+// Admin Panel: keep the existing admin system
+if (path === "/admin") {
+  import("./admin.js");
 } else {
-  document.querySelector('#app').innerHTML = `
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo">🏡</div>
-        <div>
-          <h1>ग्राम अमीरपुर</h1>
-          <p>बलदेव, मथुरा, उत्तर प्रदेश</p>
-        </div>
-      </div>
-      <div class="digital">OUR VILLAGE • OUR PRIDE</div>
-    </header>
+  const app = document.querySelector("#app");
 
-    <nav class="navbar">
-      <a href="#home">होम</a>
-      <a href="#news">गाँव के समाचार</a>
-      <a href="#schemes">सरकारी योजनाएँ</a>
-      <a href="#farmers">किसान कॉर्नर</a>
-      <a href="#notices">सरकारी सूचनाएँ</a>
-      <a href="#panchayat">ग्राम पंचायत</a>
-      <a href="#directory">Call Directory</a>
-      <a href="#contact">संपर्क</a>
-      <a href="/admin">Admin Login</a>
-    </nav>
+  const navLinks = [
+    ["/", "होम"],
+    ["/about", "गाँव का परिचय"],
+    ["/news", "गाँव के समाचार"],
+    ["/schemes", "सरकारी योजनाएँ"],
+    ["/farmers", "किसान कॉर्नर"],
+    ["/notices", "सूचनाएँ"],
+    ["/panchayat", "ग्राम पंचायत"],
+    ["/directory", "गाँव की डायरेक्टरी"],
+    ["/contact", "संपर्क करें"]
+  ];
 
-    <main id="home">
-      <section class="hero">
-        <div class="hero-content">
-          <span class="tag">🌿 हमारी पहचान • हमारा अमीरपुर</span>
-          <h2>डिजिटल ग्राम <span>अमीरपुर</span></h2>
-          <p>
-            अपने गाँव की खबरें, सरकारी योजनाएँ, कृषि जानकारी,
-            पंचायत की सूचनाएँ और विकास कार्यों की जानकारी एक ही जगह पाएँ।
+  const pages = {
+    "/": {
+      title: "ग्राम अमीरपुर",
+      subtitle: "अपना गाँव, अपनी पहचान",
+      content: `
+        <section class="hero">
+          <div class="hero-content">
+            <span class="tag">🌿 डिजिटल ग्राम अमीरपुर</span>
+            <h2>
+              अपने गाँव की<br>
+              <span>अपनी वेबसाइट</span>
+            </h2>
+            <p>
+              ग्राम अमीरपुर की जानकारी, गाँव के समाचार,
+              सरकारी योजनाएँ और जरूरी सूचनाएँ अब एक ही जगह।
+            </p>
+            <div class="hero-buttons">
+              <a class="button" href="/about">गाँव के बारे में जानें →</a>
+              <a class="button button-gold" href="/news">ताजा समाचार देखें</a>
+            </div>
+          </div>
+          <div class="hero-icon">🏡</div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <span class="tag">हमारा गाँव</span>
+            <h2>ग्राम अमीरपुर में आपका स्वागत है</h2>
+            <p>गाँव की जानकारी अब डिजिटल माध्यम से सभी तक।</p>
+          </div>
+
+          <div class="grid">
+            <a class="card" href="/about">
+              <div class="icon">🏡</div>
+              <h3>गाँव का परिचय</h3>
+              <p>ग्राम अमीरपुर के बारे में जानें।</p>
+              <span>और जानें →</span>
+            </a>
+
+            <a class="card" href="/news">
+              <div class="icon">📰</div>
+              <h3>गाँव के समाचार</h3>
+              <p>गाँव से जुड़ी खबरें और महत्वपूर्ण अपडेट।</p>
+              <span>समाचार देखें →</span>
+            </a>
+
+            <a class="card" href="/schemes">
+              <div class="icon">📋</div>
+              <h3>सरकारी योजनाएँ</h3>
+              <p>सरकारी योजनाओं की जानकारी और उपयोगी लिंक।</p>
+              <span>जानकारी देखें →</span>
+            </a>
+
+            <a class="card" href="/farmers">
+              <div class="icon">🌾</div>
+              <h3>किसान कॉर्नर</h3>
+              <p>कृषि, खेती और किसानों के लिए उपयोगी जानकारी।</p>
+              <span>यहाँ देखें →</span>
+            </a>
+
+            <a class="card" href="/panchayat">
+              <div class="icon">🏛️</div>
+              <h3>ग्राम पंचायत</h3>
+              <p>पंचायत से संबंधित जानकारी और सुविधाएँ।</p>
+              <span>जानकारी देखें →</span>
+            </a>
+
+            <a class="card" href="/directory">
+              <div class="icon">👥</div>
+              <h3>गाँव की डायरेक्टरी</h3>
+              <p>उपलब्ध संपर्क और जरूरी जानकारी खोजें।</p>
+              <span>डायरेक्टरी खोलें →</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <h2>गाँव की ताजा खबरें</h2>
+            <p>ग्राम अमीरपुर से संबंधित नवीनतम समाचार।</p>
+          </div>
+          <div id="home-news" class="grid">
+            <div class="card"><p>समाचार लोड हो रहे हैं...</p></div>
+          </div>
+          <p class="center-link">
+            <a class="button" href="/news">सभी समाचार देखें →</a>
           </p>
-          <a class="button" href="#news">ताजा समाचार देखें →</a>
-        </div>
-        <div class="hero-icon">🏡</div>
-      </section>
+        </section>
 
-      <section class="section" id="news">
-        <div class="section-heading">
-          <span>LATEST UPDATES</span>
-          <h2>📰 गाँव के ताजा समाचार</h2>
-          <p>अमीरपुर में होने वाली गतिविधियों और नई खबरों की जानकारी।</p>
-        </div>
-        <div id="public-news" class="cards">
-          <p class="notice">📢 समाचार लोड हो रहे हैं...</p>
-        </div>
-      </section>
-
-      <section class="section" id="schemes">
-        <div class="section-heading">
-          <span>GOVERNMENT SCHEMES</span>
-          <h2>🏛️ सरकारी योजनाएँ</h2>
-          <p>सरकारी योजनाओं की जानकारी और आवेदन से जुड़ी मदद।</p>
-        </div>
-        <div class="cards">
-          <article class="card">
-            <div class="icon">🏠</div>
-            <h3>प्रधानमंत्री आवास योजना</h3>
-            <p>आवास योजना की पात्रता और आवेदन संबंधी जानकारी प्राप्त करें।</p>
-            <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
-          </article>
-          <article class="card">
-            <div class="icon">🌾</div>
-            <h3>पीएम किसान सम्मान निधि</h3>
-            <p>किसान सम्मान निधि की किस्त और लाभार्थी संबंधी जानकारी।</p>
-            <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
-          </article>
-          <article class="card">
-            <div class="icon">💳</div>
-            <h3>ई-श्रम कार्ड</h3>
-            <p>असंगठित क्षेत्र के श्रमिकों के लिए आधिकारिक जानकारी।</p>
-            <a href="https://eshram.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
-          </article>
-          <article class="card">
-            <div class="icon">📋</div>
-            <h3>अन्य सरकारी योजनाएँ</h3>
-            <p>सरकारी योजनाओं की जानकारी संबंधित विभाग की वेबसाइट पर देखें।</p>
-            <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer">योजनाएँ देखें →</a>
-          </article>
-        </div>
-      </section>
-
-      <section class="section farmers" id="farmers">
-        <div class="section-heading">
-          <span>FARMER CORNER</span>
-          <h2>🌾 किसान कॉर्नर</h2>
-          <p>किसानों के लिए उपयोगी जानकारी और सरकारी सुविधाएँ।</p>
-        </div>
-        <div class="cards">
-          <article class="card">
-            <div class="icon">🌱</div>
-            <h3>फसल और बीज</h3>
-            <p>बुवाई, बीज चयन और फसल की देखभाल से जुड़ी जानकारी।</p>
-          </article>
-          <article class="card">
-            <div class="icon">🧪</div>
-            <h3>खाद और उर्वरक</h3>
-            <p>खाद की उपलब्धता और उर्वरक के सही इस्तेमाल की जानकारी।</p>
-          </article>
-          <article class="card">
-            <div class="icon">💰</div>
-            <h3>किसान सहायता</h3>
-            <p>किसान योजनाओं और कृषि विभाग की आधिकारिक सेवाओं के लिंक।</p>
-            <a href="https://agriculture.up.gov.in/" target="_blank" rel="noopener noreferrer">कृषि विभाग →</a>
-          </article>
-          <article class="card">
-            <div class="icon">🌦️</div>
-            <h3>मौसम की जानकारी</h3>
-            <p>खेती की योजना बनाने से पहले मौसम की जानकारी जरूर देखें।</p>
-            <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">मौसम विभाग →</a>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="notices">
-        <div class="section-heading">
-          <span>PUBLIC NOTICES</span>
-          <h2>📢 सरकारी सूचनाएँ</h2>
-          <p>पंचायत के नोटिस, घोषणाएँ और जरूरी अपडेट।</p>
-        </div>
-        <div class="information">
+        <section class="village-message">
           <div>
-            <h2>जरूरी सूचना</h2>
-            <p>नई सूचनाएँ प्रकाशित होने पर यहाँ दिखाई देंगी।</p>
+            <span class="tag">हमारी पहचान</span>
+            <h2>एक गाँव, एक परिवार</h2>
+            <p>
+              हमारा उद्देश्य ग्राम अमीरपुर की जानकारी को
+              डिजिटल माध्यम से लोगों तक पहुँचाना है।
+            </p>
           </div>
-          <div class="icon">📄</div>
-        </div>
-      </section>
-
-      <section class="section lower-sections" id="panchayat">
-        <div class="section-heading">
-          <span>GRAM PANCHAYAT</span>
-          <h2>🏡 ग्राम पंचायत अमीरपुर</h2>
-          <p>गाँव के विकास कार्यों और पंचायत संबंधी जानकारी का केंद्र।</p>
-        </div>
-        <div class="cards">
-          <article class="card">
-            <div class="icon">🏛️</div>
-            <h3>पंचायत परिचय</h3>
-            <p>ग्राम पंचायत से जुड़ी आधिकारिक जानकारी यहाँ उपलब्ध कराई जाएगी।</p>
-          </article>
-          <article class="card">
-            <div class="icon">🛠️</div>
-            <h3>विकास कार्य</h3>
-            <p>गाँव में होने वाले विकास कार्यों की जानकारी यहाँ साझा की जाएगी।</p>
-          </article>
-          <article class="card">
-            <div class="icon">👥</div>
-            <h3>जनसुविधाएँ</h3>
-            <p>गाँव की सार्वजनिक सुविधाओं और जरूरी सेवाओं की जानकारी।</p>
-          </article>
-          <article class="card">
-            <div class="icon">📣</div>
-            <h3>जनसमस्याएँ</h3>
-            <p>गाँव की समस्याओं और उनके समाधान से संबंधित अपडेट।</p>
-          </article>
-        </div>
-      </section>
-
-      <!-- CALL DIRECTORY -->
-      <section class="section" id="directory">
-        <div class="section-heading">
-          <span>VILLAGE CONTACTS</span>
-          <h2>📞 ग्राम अमीरपुर Call Directory</h2>
-          <p>गाँव के लोगों का नाम या मोबाइल नंबर खोजें और सीधे कॉल करें।</p>
-        </div>
-
-        <div class="directory-box">
-          <input
-            type="search"
-            id="directory-search"
-            placeholder="🔍 नाम या मोबाइल नंबर खोजें..."
-            aria-label="नाम या मोबाइल नंबर खोजें"
-          >
-
-          <p id="directory-status" aria-live="polite">
-            डायरेक्टरी लोड हो रही है...
-          </p>
-
-          <div id="public-directory" class="cards"></div>
-        </div>
-      </section>
-
-      <!-- CONTACT SECTION -->
-      <section class="section contact" id="contact">
-        <div class="section-heading">
-          <span>CONTACT</span>
-          <h2>📍 संपर्क और पता</h2>
-          <p>ग्राम अमीरपुर, ब्लॉक बलदेव, जिला मथुरा, उत्तर प्रदेश।</p>
-        </div>
-
-        <div class="contact-details">
-          <div class="icon">📞</div>
-          <h3>हमसे संपर्क करें</h3>
-          <p>संपर्क नंबर: <strong>9548772433</strong></p>
-
-          <div class="contact-actions">
-            <a class="button" href="tel:9548772433">
-              📞 अभी कॉल करें
-            </a>
-            <a
-              class="button"
-              href="https://wa.me/919548772433"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              🟢 WhatsApp पर संपर्क करें
-            </a>
-          </div>
-        </div>
-
-        <p class="small">
-          यह वेबसाइट गाँव की जानकारी साझा करने के उद्देश्य से बनाई गई है।
-        </p>
-      </section>
-    </main>
-
-    <footer>
-      <h3>🏡 ग्राम अमीरपुर</h3>
-      <p>हमारा गाँव • हमारी पहचान • हमारा विकास</p>
-      <small>© ग्राम अमीरपुर | सभी अधिकार सुरक्षित</small>
-    </footer>
-  `
-
-  // सार्वजनिक समाचार लोड करें
-  const newsContainer = document.querySelector('#public-news')
-  const newsQuery = query(
-    collection(db, 'news'),
-    orderBy('date', 'desc')
-  )
-
-  onSnapshot(
-    newsQuery,
-    (snapshot) => {
-      newsContainer.replaceChildren()
-
-      if (snapshot.empty) {
-        newsContainer.textContent = 'अभी कोई समाचार प्रकाशित नहीं हुआ है।'
-        return
-      }
-
-      snapshot.forEach((newsDoc) => {
-        const item = newsDoc.data()
-        const article = document.createElement('article')
-        article.className = 'card'
-
-        const title = document.createElement('h3')
-        title.textContent = item.title || 'गाँव का समाचार'
-
-        const category = document.createElement('p')
-        category.textContent = 'श्रेणी: ' + (item.category || 'सामान्य')
-
-        const description = document.createElement('p')
-        description.textContent = item.description || ''
-
-        article.append(title, category, description)
-        newsContainer.append(article)
-      })
+        </section>
+      `
     },
-    (error) => {
-      console.error('समाचार लोड करने में समस्या:', error)
-      newsContainer.textContent =
-        'समाचार अभी लोड नहीं हो पाए। कृपया कुछ देर बाद फिर प्रयास करें।'
+
+    "/about": {
+      title: "ग्राम अमीरपुर का परिचय",
+      subtitle: "हमारे गाँव के बारे में जानें",
+      content: `
+        <section class="section">
+          <div class="card">
+            <div class="icon">🏡</div>
+            <h2>हमारा गाँव, हमारी पहचान</h2>
+            <p>ग्राम अमीरपुर की वेबसाइट पर आपका स्वागत है।</p>
+            <p>
+              इस वेबसाइट का उद्देश्य गाँव से जुड़ी महत्वपूर्ण
+              जानकारी को डिजिटल रूप में उपलब्ध कराना है।
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>ग्राम की मुख्य जानकारी</h2>
+            <p><strong>गाँव का नाम:</strong> अमीरपुर</p>
+            <p><strong>जिला:</strong> मथुरा, उत्तर प्रदेश</p>
+            <p><strong>उद्देश्य:</strong> गाँव की जानकारी ऑनलाइन उपलब्ध कराना।</p>
+          </div>
+        </section>
+      `
+    },
+
+    "/news": {
+      title: "गाँव के समाचार",
+      subtitle: "ग्राम अमीरपुर से जुड़ी खबरें और अपडेट",
+      content: `
+        <section class="section">
+          <div class="section-heading">
+            <h2>ताजा समाचार</h2>
+            <p>प्रकाशित समाचार यहाँ दिखाई देंगे।</p>
+          </div>
+          <div id="news-list" class="grid">
+            <div class="card"><p>समाचार लोड हो रहे हैं...</p></div>
+          </div>
+        </section>
+      `
+    },
+
+    "/schemes": {
+      title: "सरकारी योजनाएँ",
+      subtitle: "सरकारी योजनाओं से जुड़ी उपयोगी जानकारी",
+      content: `
+        <section class="section">
+          <div class="grid">
+            <div class="card">
+              <div class="icon">🌾</div>
+              <h3>पीएम किसान सम्मान निधि</h3>
+              <p>किसान सम्मान निधि से संबंधित जानकारी और स्थिति जाँचने की सुविधा।</p>
+              <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
+            </div>
+
+            <div class="card">
+              <div class="icon">🏠</div>
+              <h3>प्रधानमंत्री आवास योजना</h3>
+              <p>आवास योजनाओं से संबंधित आधिकारिक जानकारी प्राप्त करें।</p>
+              <a href="https://pmayg.nic.in/" target="_blank" rel="noopener noreferrer">आधिकारिक वेबसाइट →</a>
+            </div>
+
+            <div class="card">
+              <div class="icon">🪪</div>
+              <h3>डिजिटल सेवाएँ</h3>
+              <p>सरकारी सेवाओं और ऑनलाइन सुविधाओं की जानकारी।</p>
+              <a href="https://india.gov.in/" target="_blank" rel="noopener noreferrer">भारत सरकार का पोर्टल →</a>
+            </div>
+          </div>
+          <p class="small">योजनाओं की पात्रता और नियम संबंधित आधिकारिक वेबसाइट पर जाँचें।</p>
+        </section>
+      `
+    },
+
+    "/farmers": {
+      title: "किसान कॉर्नर",
+      subtitle: "खेती और किसानों के लिए उपयोगी जानकारी",
+      content: `
+        <section class="section">
+          <div class="grid">
+            <div class="card">
+              <div class="icon">🌱</div>
+              <h3>फसल की जानकारी</h3>
+              <p>फसलों की बुवाई, बीज और खेती की तकनीकों से संबंधित जानकारी।</p>
+            </div>
+            <div class="card">
+              <div class="icon">🌦️</div>
+              <h3>मौसम की जानकारी</h3>
+              <p>खेती के काम की योजना बनाने के लिए मौसम की जानकारी देखें।</p>
+              <a href="https://mausam.imd.gov.in/" target="_blank" rel="noopener noreferrer">मौसम विभाग →</a>
+            </div>
+            <div class="card">
+              <div class="icon">💰</div>
+              <h3>किसान योजनाएँ</h3>
+              <p>कृषि और किसान कल्याण से जुड़ी सरकारी योजनाओं की जानकारी।</p>
+              <a href="https://agriwelfare.gov.in/" target="_blank" rel="noopener noreferrer">कृषि विभाग →</a>
+            </div>
+          </div>
+        </section>
+      `
+    },
+
+    "/notices": {
+      title: "महत्वपूर्ण सूचनाएँ",
+      subtitle: "गाँव के लोगों के लिए जरूरी सूचना",
+      content: `
+        <section class="section">
+          <div class="section-heading">
+            <h2>सूचना बोर्ड</h2>
+            <p>नई सूचनाएँ यहाँ प्रकाशित की जा सकती हैं।</p>
+          </div>
+          <div id="notice-list" class="grid">
+            <div class="card">
+              <div class="icon">📢</div>
+              <h3>सूचना बोर्ड</h3>
+              <p>अभी कोई सूचना उपलब्ध नहीं है।</p>
+            </div>
+          </div>
+        </section>
+      `
+    },
+
+    "/panchayat": {
+      title: "ग्राम पंचायत",
+      subtitle: "पंचायत से जुड़ी जानकारी और सुविधाएँ",
+      content: `
+        <section class="section">
+          <div class="grid">
+            <div class="card">
+              <div class="icon">🏛️</div>
+              <h3>पंचायत की जानकारी</h3>
+              <p>ग्राम पंचायत से संबंधित प्रमाणित जानकारी यहाँ उपलब्ध कराई जा सकती है।</p>
+            </div>
+            <div class="card">
+              <div class="icon">📄</div>
+              <h3>सरकारी सेवाएँ</h3>
+              <p>उत्तर प्रदेश की सरकारी सेवाओं की जानकारी प्राप्त करें।</p>
+              <a href="https://up.gov.in/" target="_blank" rel="noopener noreferrer">उत्तर प्रदेश सरकार →</a>
+            </div>
+            <div class="card">
+              <div class="icon">📣</div>
+              <h3>जनहित सूचनाएँ</h3>
+              <p>पंचायत और गाँव के लिए महत्वपूर्ण सूचनाएँ देखें।</p>
+            </div>
+          </div>
+        </section>
+      `
+    },
+
+    "/directory": {
+      title: "गाँव की डायरेक्टरी",
+      subtitle: "उपलब्ध संपर्क जानकारी खोजें",
+      content: `
+        <section class="section">
+          <div class="search-box">
+            <input id="directory-search" type="search" placeholder="नाम या पद से खोजें..." aria-label="डायरेक्टरी खोजें">
+          </div>
+          <div id="directory-list" class="grid">
+            <div class="card"><p>डायरेक्टरी लोड हो रही है...</p></div>
+          </div>
+        </section>
+      `
+    },
+
+    "/contact": {
+      title: "संपर्क करें",
+      subtitle: "ग्राम अमीरपुर की वेबसाइट से संपर्क",
+      content: `
+        <section class="section">
+          <div class="card">
+            <div class="icon">✉️</div>
+            <h2>हमसे संपर्क करें</h2>
+            <p>
+              वेबसाइट पर किसी जानकारी में सुधार या नई जानकारी
+              जोड़ने के लिए व्यवस्थापक से संपर्क करें।
+            </p>
+            <a class="button" href="/admin">Admin Panel खोलें</a>
+          </div>
+        </section>
+      `
     }
-  )
+  };
 
-  // Call Directory लोड करें
-  const directoryContainer = document.querySelector('#public-directory')
-  const directoryStatus = document.querySelector('#directory-status')
-  const directorySearch = document.querySelector('#directory-search')
-
-  let allContacts = []
-
-  function renderDirectory(searchText = '') {
-    directoryContainer.replaceChildren()
-
-    const search = searchText.trim().toLowerCase()
-
-    const filteredContacts = allContacts.filter((person) => {
-      const name = String(person.name || '').toLowerCase()
-      const phone = String(person.phone || '')
-
-      return name.includes(search) || phone.includes(search)
-    })
-
-    if (filteredContacts.length === 0) {
-      directoryStatus.textContent = search
-        ? 'आपकी खोज से कोई संपर्क नहीं मिला।'
-        : 'अभी डायरेक्टरी में कोई संपर्क नहीं जोड़ा गया है।'
-      return
-    }
-
-    directoryStatus.textContent =
-      `कुल ${filteredContacts.length} संपर्क मिले।`
-
-    filteredContacts.forEach((person) => {
-      const card = document.createElement('article')
-      card.className = 'card directory-card'
-
-      const icon = document.createElement('div')
-      icon.className = 'icon'
-      icon.textContent = '👤'
-
-      const name = document.createElement('h3')
-      name.textContent = person.name || 'नाम उपलब्ध नहीं'
-
-      const phone = document.createElement('p')
-      phone.textContent = '📱 ' + (person.phone || '')
-
-      const callButton = document.createElement('a')
-      callButton.className = 'button'
-      callButton.href = 'tel:' + String(person.phone || '').replace(/[^\d+]/g, '')
-      callButton.textContent = '📞 कॉल करें'
-
-      card.append(icon, name, phone, callButton)
-      directoryContainer.append(card)
-    })
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
   }
 
-  directorySearch.addEventListener('input', () => {
-    renderDirectory(directorySearch.value)
-  })
+  function renderHeader() {
+    return `
+      <header class="site-header">
+        <div class="container header-inner">
+          <a class="brand" href="/">
+            <span class="brand-icon">🌿</span>
+            <span>ग्राम अमीरपुर</span>
+          </a>
 
-  onSnapshot(
-    query(collection(db, 'directory'), orderBy('name')),
-    (snapshot) => {
-      allContacts = snapshot.docs.map((personDoc) => ({
-        id: personDoc.id,
-        ...personDoc.data()
-      }))
+          <button class="menu-toggle" id="menu-toggle"
+            aria-label="मेन्यू खोलें" aria-expanded="false">☰</button>
 
-      renderDirectory(directorySearch.value)
-    },
-    (error) => {
-      console.error('Call Directory लोड करने में समस्या:', error)
-      directoryStatus.textContent =
-        'डायरेक्टरी लोड नहीं हो सकी। Firebase Rules जाँचें।'
+          <nav class="main-nav" id="main-nav">
+            ${navLinks.map(([url, label]) => `
+              <a href="${url}" ${url === path ? 'aria-current="page"' : ""}>
+                ${label}
+              </a>
+            `).join("")}
+            <a href="/admin">Admin</a>
+          </nav>
+        </div>
+      </header>
+    `;
+  }
+
+  function renderFooter() {
+    return `
+      <footer class="site-footer">
+        <h2>🌿 ग्राम अमीरपुर</h2>
+        <p>अपना गाँव, अपनी पहचान</p>
+        <p>जिला मथुरा, उत्तर प्रदेश</p>
+        <p>
+          <a href="/">होम</a> ·
+          <a href="/about">गाँव का परिचय</a> ·
+          <a href="/contact">संपर्क</a>
+        </p>
+        <p>© ${new Date().getFullYear()} ग्राम अमीरपुर</p>
+      </footer>
+    `;
+  }
+
+  const currentPage = pages[path] || {
+    title: "पेज नहीं मिला",
+    subtitle: "आपके द्वारा माँगा गया पेज उपलब्ध नहीं है।",
+    content: `
+      <section class="section">
+        <div class="card">
+          <h2>404 — पेज नहीं मिला</h2>
+          <p>कृपया होमपेज पर वापस जाएँ।</p>
+          <a class="button" href="/">होमपेज पर जाएँ</a>
+        </div>
+      </section>
+    `
+  };
+
+  app.innerHTML = `
+    ${renderHeader()}
+
+    ${path === "/" ? "" : `
+      <section class="page-heading">
+        <div class="container">
+          <span class="tag">🌿 ग्राम अमीरपुर</span>
+          <h1>${escapeHTML(currentPage.title)}</h1>
+          <p>${escapeHTML(currentPage.subtitle)}</p>
+        </div>
+      </section>
+    `}
+
+    <main class="page-content">
+      ${currentPage.content}
+    </main>
+
+    ${renderFooter()}
+  `;
+
+  // Mobile navigation
+  const menuButton = document.querySelector("#menu-toggle");
+  const nav = document.querySelector("#main-nav");
+
+  menuButton?.addEventListener("click", () => {
+    const isOpen = nav.classList.toggle("show");
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  nav?.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("show");
+      menuButton?.setAttribute("aria-expanded", "false");
+    });
+  });
+
+  // Load news from Firestore
+  function loadNews(targetId, limitCount = 6) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const newsQuery = query(
+      collection(db, "news"),
+      orderBy("date", "desc")
+    );
+
+    onSnapshot(newsQuery, snapshot => {
+      if (snapshot.empty) {
+        target.innerHTML = `
+          <div class="card">
+            <div class="icon">📰</div>
+            <h3>अभी समाचार उपलब्ध नहीं हैं</h3>
+            <p>नए समाचार प्रकाशित होने पर यहाँ दिखाई देंगे।</p>
+          </div>
+        `;
+        return;
+      }
+
+      const docs = snapshot.docs.slice(0, limitCount);
+
+      target.innerHTML = docs.map(doc => {
+        const item = doc.data();
+
+        return `
+          <article class="card">
+            <div class="icon">📰</div>
+            <h3>${escapeHTML(item.title || "गाँव का समाचार")}</h3>
+            <p>${escapeHTML(item.content || item.description || "")}</p>
+            ${item.date ? `<p class="small">${escapeHTML(item.date)}</p>` : ""}
+          </article>
+        `;
+      }).join("");
+    }, error => {
+      console.error("News loading error:", error);
+      target.innerHTML = `
+        <div class="card">
+          <p>समाचार लोड नहीं हो सके। कृपया बाद में प्रयास करें।</p>
+        </div>
+      `;
+    });
+  }
+
+  if (path === "/") {
+    loadNews("home-news", 3);
+  }
+
+  if (path === "/news") {
+    loadNews("news-list", 30);
+  }
+
+  // Load directory from Firestore
+  function loadDirectory() {
+    const target = document.getElementById("directory-list");
+    const searchInput = document.getElementById("directory-search");
+
+    if (!target) return;
+
+    let allPeople = [];
+
+    function renderPeople() {
+      const term = (searchInput?.value || "").trim().toLowerCase();
+
+      const filtered = allPeople.filter(person => {
+        const text = [
+          person.name,
+          person.title,
+          person.role,
+          person.post,
+          person.phone,
+          person.mobile
+        ].join(" ").toLowerCase();
+
+        return text.includes(term);
+      });
+
+      if (filtered.length === 0) {
+        target.innerHTML = `
+          <div class="card">
+            <div class="icon">👥</div>
+            <h3>कोई जानकारी नहीं मिली</h3>
+            <p>दूसरा नाम या शब्द लिखकर खोजें।</p>
+          </div>
+        `;
+        return;
+      }
+
+      target.innerHTML = filtered.map(person => {
+        const name = person.name || "नाम उपलब्ध नहीं";
+        const role = person.role || person.title || person.post || "";
+        const phone = person.phone || person.mobile || "";
+
+        return `
+          <article class="card">
+            <div class="icon">👤</div>
+            <h3>${escapeHTML(name)}</h3>
+            ${role ? `<p>${escapeHTML(role)}</p>` : ""}
+            ${phone ? `
+              <p>
+                <a href="tel:${escapeHTML(phone)}">
+                  📞 ${escapeHTML(phone)}
+                </a>
+              </p>
+            ` : ""}
+          </article>
+        `;
+      }).join("");
     }
-  )
+
+    searchInput?.addEventListener("input", renderPeople);
+
+    onSnapshot(collection(db, "directory"), snapshot => {
+      allPeople = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      renderPeople();
+    }, error => {
+      console.error("Directory loading error:", error);
+      target.innerHTML = `
+        <div class="card">
+          <p>डायरेक्टरी लोड नहीं हो सकी।</p>
+        </div>
+      `;
+    });
+  }
+
+  if (path === "/directory") {
+    loadDirectory();
+  }
 }
